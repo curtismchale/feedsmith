@@ -34,7 +34,7 @@
 
 ;;;; Feed list mode
 
-(defvar feedsmith-list--unread-only nil
+(defvar feedsmith-list--unread-only t
   "When non-nil, show only unread entries.")
 
 (defvar feedsmith-list--search-filter nil
@@ -149,25 +149,48 @@
   "Open the entry at point in the article view."
   (interactive)
   (when-let ((entry (feedsmith-list--entry-at-point)))
-    ;; Auto-mark read
     (when (feedsmith-entry-unread entry)
-      (feedsmith-mark-read (feedsmith-entry-id entry)))
-    (feedsmith-article-show entry)
-    (feedsmith-list-refresh)))
+      (feedsmith-mark-read (feedsmith-entry-id entry))
+      (feedsmith-list--update-entry-at-point))
+    (feedsmith-article-show entry)))
 
 (defun feedsmith-list-open-browser ()
   "Open the entry at point in an external browser."
   (interactive)
   (when-let ((entry (feedsmith-list--entry-at-point)))
+    (when (feedsmith-entry-unread entry)
+      (feedsmith-mark-read (feedsmith-entry-id entry))
+      (feedsmith-list--update-entry-at-point))
     (when-let ((url (feedsmith-entry-url entry)))
       (browse-url url))))
+
+(defun feedsmith-list--update-entry-at-point ()
+  "Update the visual display of the entry at point without rebuilding the list."
+  (when-let ((id (tabulated-list-get-id))
+             (entry (gethash id feedsmith--entries)))
+    (let* ((unread (feedsmith-entry-unread entry))
+           (starred (feedsmith-entry-starred entry))
+           (title (or (feedsmith-entry-title entry) "(no title)"))
+           (feed (or (feedsmith-entry-feed-title entry) ""))
+           (date (feedsmith-list--format-date (feedsmith-entry-published entry)))
+           (face (if unread 'feedsmith-unread-face 'feedsmith-read-face))
+           (inhibit-read-only t))
+      (tabulated-list-set-col 0 (if unread
+                                    (propertize "\u2022" 'face 'feedsmith-unread-face)
+                                  " "))
+      (tabulated-list-set-col 1 (if starred
+                                    (propertize "\u2605" 'face 'feedsmith-starred-face)
+                                  " "))
+      (tabulated-list-set-col 2 (propertize date 'face face))
+      (tabulated-list-set-col 3 (propertize feed 'face face))
+      (tabulated-list-set-col 4 (propertize title 'face face)))))
 
 (defun feedsmith-list-toggle-read ()
   "Toggle read state of the entry at point."
   (interactive)
   (when-let ((entry (feedsmith-list--entry-at-point)))
     (feedsmith-toggle-read (feedsmith-entry-id entry))
-    (feedsmith-list-refresh)))
+    (feedsmith-list--update-entry-at-point)))
 
 (defun feedsmith-list-toggle-starred ()
   "Toggle starred state of the entry at point."
