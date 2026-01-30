@@ -138,23 +138,27 @@ Should be an object inheriting from `feedsmith-backend'."
           (maphash (lambda (k _v) (push k unread-list)) feedsmith--unread-ids))
         (when feedsmith--starred-ids
           (maphash (lambda (k _v) (push k starred-list)) feedsmith--starred-ids))
-        (with-temp-file (feedsmith--cache-file)
-          (let ((print-level nil)
-                (print-length nil))
-            (prin1 (list :subscriptions (mapcar #'feedsmith--sub-to-plist feedsmith--subscriptions)
-                         :entries entries-list
-                         :unread-ids unread-list
-                         :starred-ids starred-list
-                         :last-sync-time feedsmith--last-sync-time)
-                   (current-buffer))))))))
+        (let ((coding-system-for-write 'utf-8))
+          (with-temp-file (feedsmith--cache-file)
+            (let ((print-level nil)
+                  (print-length nil)
+                  (print-escape-nonascii nil)
+                  (print-escape-multibyte nil))
+              (prin1 (list :subscriptions (mapcar #'feedsmith--sub-to-plist feedsmith--subscriptions)
+                           :entries entries-list
+                           :unread-ids unread-list
+                           :starred-ids starred-list
+                           :last-sync-time feedsmith--last-sync-time)
+                     (current-buffer)))))))))
 
 (defun feedsmith--load-cache ()
   "Load state from the cache file."
   (let ((file (feedsmith--cache-file)))
     (when (file-exists-p file)
-      (let ((data (with-temp-buffer
-                    (insert-file-contents file)
-                    (read (current-buffer)))))
+      (let ((data (let ((coding-system-for-read 'utf-8))
+                    (with-temp-buffer
+                      (insert-file-contents file)
+                      (read (current-buffer))))))
         (setq feedsmith--subscriptions
               (mapcar #'feedsmith--plist-to-sub (plist-get data :subscriptions)))
         (setq feedsmith--entries (make-hash-table :test 'equal))

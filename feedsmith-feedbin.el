@@ -88,6 +88,10 @@ For 204 responses, the cdr is nil."
             ;; Move past headers
             (goto-char (point-min))
             (re-search-forward "\r?\n\r?\n" nil t)
+            ;; Ensure raw bytes before UTF-8 decode to prevent
+            ;; double-decoding when url.el already decoded the buffer.
+            (set-buffer-multibyte nil)
+            (decode-coding-region (point) (point-max) 'utf-8)
             (let ((json-data
                    (if (= status 204)
                        nil
@@ -125,6 +129,9 @@ For 204 responses, the cdr is nil."
               (let ((next-url (feedsmith-feedbin--get-link-next buffer)))
                 (goto-char (point-min))
                 (re-search-forward "\r?\n\r?\n" nil t)
+                ;; Ensure raw bytes before UTF-8 decode (see above).
+                (set-buffer-multibyte nil)
+                (decode-coding-region (point) (point-max) 'utf-8)
                 (let ((json-array-type 'list)
                       (json-object-type 'alist)
                       (json-key-type 'symbol))
