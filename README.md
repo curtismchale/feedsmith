@@ -189,3 +189,9 @@ Feedsmith uses a pluggable backend protocol via EIEIO. To add a new backend:
 ```
 
 4. Set your backend: `(setq feedsmith-backend (feedsmith-mybackend :api-url "https://..."))`
+
+## Roadmap
+
+- [ ] support other sync services (create an issue)
+- [ ] show read items
+- [ ] support your emacs theme for colouring the text in feed views
