@@ -17,19 +17,48 @@
 ;;;; Faces
 
 (defface feedsmith-unread-face
-  '((t :weight bold))
+  '((t :inherit bold))
   "Face for unread entries in the feed list."
   :group 'feedsmith)
 
 (defface feedsmith-read-face
-  '((t :weight normal))
+  '((t :inherit shadow))
   "Face for read entries in the feed list."
   :group 'feedsmith)
 
 (defface feedsmith-starred-face
-  '((((class color) (background light)) :foreground "#b8860b")
-    (((class color) (background dark)) :foreground "#ffd700"))
+  '((t :inherit warning))
   "Face for the star indicator."
+  :group 'feedsmith)
+
+(defface feedsmith-date-face
+  '((t :inherit font-lock-comment-face))
+  "Face for dates in the feed list."
+  :group 'feedsmith)
+
+(defface feedsmith-feed-face
+  '((t :inherit font-lock-keyword-face))
+  "Face for feed names in the feed list."
+  :group 'feedsmith)
+
+(defface feedsmith-title-face
+  '((t :inherit font-lock-string-face))
+  "Face for entry titles in the feed list."
+  :group 'feedsmith)
+
+(defface feedsmith-title-unread-face
+  '((t :inherit (feedsmith-title-face bold)))
+  "Face for unread entry titles in the feed list."
+  :group 'feedsmith)
+
+(defface feedsmith-article-title-face
+  '((t :inherit font-lock-keyword-face :weight bold :height 1.3))
+  "Face for the article title in the article view."
+  :group 'feedsmith)
+
+(defface feedsmith-article-meta-face
+  '((t :inherit font-lock-comment-face))
+  "Face for article metadata (author, feed, date, URL)."
   :group 'feedsmith)
 
 ;;;; Feed list mode
@@ -98,7 +127,7 @@
                           (string-match-p
                            (regexp-quote feedsmith-list--search-filter)
                            (concat title " " feed))))
-             (let ((face (if unread 'feedsmith-unread-face 'feedsmith-read-face)))
+             (let ((title-face (if unread 'feedsmith-title-unread-face 'feedsmith-title-face)))
                (push (list id
                            (vector
                             (if unread
@@ -107,9 +136,9 @@
                             (if starred
                                 (propertize "\u2605" 'face 'feedsmith-starred-face)
                               " ")
-                            (propertize date 'face face)
-                            (propertize feed 'face face)
-                            (propertize title 'face face)))
+                            (propertize date 'face 'feedsmith-date-face)
+                            (propertize feed 'face 'feedsmith-feed-face)
+                            (propertize title 'face title-face)))
                      result)))))
        feedsmith--entries))
     result))
@@ -173,7 +202,7 @@
            (title (or (feedsmith-entry-title entry) "(no title)"))
            (feed (or (feedsmith-entry-feed-title entry) ""))
            (date (feedsmith-list--format-date (feedsmith-entry-published entry)))
-           (face (if unread 'feedsmith-unread-face 'feedsmith-read-face))
+           (title-face (if unread 'feedsmith-title-unread-face 'feedsmith-title-face))
            (inhibit-read-only t))
       (tabulated-list-set-col 0 (if unread
                                     (propertize "\u2022" 'face 'feedsmith-unread-face)
@@ -181,9 +210,9 @@
       (tabulated-list-set-col 1 (if starred
                                     (propertize "\u2605" 'face 'feedsmith-starred-face)
                                   " "))
-      (tabulated-list-set-col 2 (propertize date 'face face))
-      (tabulated-list-set-col 3 (propertize feed 'face face))
-      (tabulated-list-set-col 4 (propertize title 'face face)))))
+      (tabulated-list-set-col 2 (propertize date 'face 'feedsmith-date-face))
+      (tabulated-list-set-col 3 (propertize feed 'face 'feedsmith-feed-face))
+      (tabulated-list-set-col 4 (propertize title 'face title-face)))))
 
 (defun feedsmith-list-toggle-read ()
   "Toggle read state of the entry at point."
@@ -273,11 +302,12 @@
             (feed (feedsmith-entry-feed-title entry))
             (date (feedsmith-entry-published entry))
             (url (feedsmith-entry-url entry)))
-        (insert (propertize title 'face '(:weight bold :height 1.3)) "\n")
-        (when author (insert "Author: " author "\n"))
-        (when feed (insert "Feed:   " feed "\n"))
-        (when date (insert "Date:   " (feedsmith-list--format-date date) "\n"))
-        (when url (insert "URL:    " url "\n"))
+        (insert (propertize title 'face 'feedsmith-article-title-face) "\n")
+        (when author (insert (propertize "Author: " 'face 'feedsmith-article-meta-face) author "\n"))
+        (when feed (insert (propertize "Feed:   " 'face 'feedsmith-article-meta-face) feed "\n"))
+        (when date (insert (propertize "Date:   " 'face 'feedsmith-article-meta-face)
+                           (feedsmith-list--format-date date) "\n"))
+        (when url (insert (propertize "URL:    " 'face 'feedsmith-article-meta-face) url "\n"))
         (insert "\n" (make-string 72 ?-) "\n\n"))
       ;; Body
       (let ((content (or (feedsmith-entry-content entry)
