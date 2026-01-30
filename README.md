@@ -59,7 +59,7 @@ If no keys are listed, generate one:
 gpg --full-generate-key
 ```
 
-Accept the defaults (RSA and RSA, 3072 bits), enter your name and email, and set a passphrase. For a more detailed walkthrough, see the [GnuPG Handbook](https://www.gnupg.org/gph/en/manual/c14.html) or the [GitHub GPG guide](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key).
+Accept the defaults (RSA and RSA, 3072 bits), enter your name and email, and set a passphrase. For a more detailed walkthrough, see the [GitHub GPG guide](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key).
 
 ### Creating the Credentials File
 
