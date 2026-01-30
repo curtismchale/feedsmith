@@ -45,11 +45,45 @@ Then reload: `SPC h r r` inside Emacs, followed by `doom sync` in a terminal. Th
 
 Feedsmith reads Feedbin credentials from `auth-source` (typically `~/.authinfo.gpg`).
 
-Add this line to your `~/.authinfo.gpg`:
+### GPG Key Setup
+
+If you don't already have a GPG key, you'll need one to encrypt your credentials file. Check if you have an existing key:
+
+```bash
+gpg --list-keys
+```
+
+If no keys are listed, generate one:
+
+```bash
+gpg --full-generate-key
+```
+
+Accept the defaults (RSA and RSA, 3072 bits), enter your name and email, and set a passphrase. For a more detailed walkthrough, see the [GnuPG Handbook](https://www.gnupg.org/gph/en/manual/c14.html) or the [GitHub GPG guide](https://docs.github.com/en/authentication/managing-commit-signature-verification/generating-a-new-gpg-key).
+
+### Creating the Credentials File
+
+The safest way to create the encrypted credentials file is from within Emacs, which handles encryption automatically:
+
+```
+C-x C-f ~/.authinfo.gpg RET
+```
+
+Type your credentials:
 
 ```
 machine api.feedbin.com login YOUR_EMAIL password YOUR_PASSWORD
 ```
+
+Save with `C-x C-s`. Emacs will prompt you to select your GPG key for encryption.
+
+You can verify the file is properly encrypted:
+
+```bash
+file ~/.authinfo.gpg
+```
+
+This should report something like `PGP RSA encrypted session key` rather than plain ASCII text.
 
 ## Usage
 
