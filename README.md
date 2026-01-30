@@ -28,7 +28,7 @@ In `config.el`:
   (require 'feedsmith-evil))
 ```
 
-Run `doom sync` and restart Emacs.
+Then reload: `SPC h r r` inside Emacs, followed by `doom sync` in a terminal. Then quit and restart Emacs for the command to show up.
 
 ### straight.el / use-package
 
