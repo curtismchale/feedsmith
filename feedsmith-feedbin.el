@@ -50,6 +50,26 @@ Looks for an entry matching machine=api.feedbin.com in ~/.authinfo.gpg."
 
 ;;;; HTTP helper
 
+(defun feedsmith-feedbin--decode-response-body ()
+  "Decode the HTTP response body from point to end of buffer as UTF-8.
+Handles both raw bytes left by url.el and text that url.el may
+have already decoded using a wrong single-byte charset.
+Point is left at the start of the decoded body."
+  (let* ((start (point))
+         (raw (buffer-substring-no-properties start (point-max)))
+         (decoded (condition-case nil
+                      (decode-coding-string
+                       (encode-coding-string raw 'latin-1)
+                       'utf-8)
+                    ;; encode-coding-string fails for chars > 255,
+                    ;; meaning url.el already decoded as UTF-8 correctly.
+                    (error raw))))
+    (delete-region start (point-max))
+    (goto-char start)
+    (set-buffer-multibyte t)
+    (insert decoded)
+    (goto-char start)))
+
 (defun feedsmith-feedbin--auth-header (backend)
   "Return the Basic Auth header value for BACKEND."
   (concat "Basic "
@@ -88,10 +108,7 @@ For 204 responses, the cdr is nil."
             ;; Move past headers
             (goto-char (point-min))
             (re-search-forward "\r?\n\r?\n" nil t)
-            ;; Ensure raw bytes before UTF-8 decode to prevent
-            ;; double-decoding when url.el already decoded the buffer.
-            (set-buffer-multibyte nil)
-            (decode-coding-region (point) (point-max) 'utf-8)
+            (feedsmith-feedbin--decode-response-body)
             (let ((json-data
                    (if (= status 204)
                        nil
@@ -129,9 +146,7 @@ For 204 responses, the cdr is nil."
               (let ((next-url (feedsmith-feedbin--get-link-next buffer)))
                 (goto-char (point-min))
                 (re-search-forward "\r?\n\r?\n" nil t)
-                ;; Ensure raw bytes before UTF-8 decode (see above).
-                (set-buffer-multibyte nil)
-                (decode-coding-region (point) (point-max) 'utf-8)
+                (feedsmith-feedbin--decode-response-body)
                 (let ((json-array-type 'list)
                       (json-object-type 'alist)
                       (json-key-type 'symbol))
