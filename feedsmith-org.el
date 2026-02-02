@@ -73,7 +73,6 @@ positions point on it, and invokes `org-refile'."
       ;; Build the headline
       (insert "* " (if url (format "[[%s][%s]]" url title) title) "\n")
       (insert ":PROPERTIES:\n")
-      (when url    (insert ":URL: " url "\n"))
       (when date   (insert ":DATE: " date "\n"))
       (when author (insert ":AUTHOR: " author "\n"))
       (when feed   (insert ":FEED: " feed "\n"))
