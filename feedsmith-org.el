@@ -71,7 +71,7 @@ positions point on it, and invokes `org-refile'."
       (erase-buffer)
       (org-mode)
       ;; Build the headline
-      (insert "* " title "\n")
+      (insert "* " (if url (format "[[%s][%s]]" url title) title) "\n")
       (insert ":PROPERTIES:\n")
       (when url    (insert ":URL: " url "\n"))
       (when date   (insert ":DATE: " date "\n"))
