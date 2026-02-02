@@ -431,5 +431,16 @@ applied so the content is `feedsmith-center-width' columns wide."
      (feedsmith--update-centering win))
    'no-minibuf frame))
 
+(defun feedsmith--on-focus-change ()
+  "Update centering for feedsmith windows when frame focus changes.
+This catches the case where a frame is moved between monitors,
+which changes `frame-pixel-width' without triggering
+`window-size-change-functions'."
+  (dolist (frame (frame-list))
+    (when (frame-focus-state frame)
+      (feedsmith--centering-hook frame))))
+
+(add-function :after after-focus-change-function #'feedsmith--on-focus-change)
+
 (provide 'feedsmith-ui)
 ;;; feedsmith-ui.el ends here
