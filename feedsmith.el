@@ -51,6 +51,18 @@ Should be an object inheriting from `feedsmith-backend'."
                  (const :tag "Disabled" nil))
   :group 'feedsmith)
 
+(defcustom feedsmith-center-threshold 1600
+  "Frame pixel width above which buffer content is centered.
+When the frame is wider than this value, equal left and right
+window margins are added to center the content."
+  :type 'integer
+  :group 'feedsmith)
+
+(defcustom feedsmith-center-width 120
+  "Desired content width in columns when centering is active."
+  :type 'integer
+  :group 'feedsmith)
+
 ;;;; Internal state
 
 (defvar feedsmith--subscriptions nil

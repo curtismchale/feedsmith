@@ -95,7 +95,8 @@
          ("Title" 0 t)])
   (setq tabulated-list-sort-key '("Date" . t))
   (setq tabulated-list-padding 1)
-  (tabulated-list-init-header))
+  (tabulated-list-init-header)
+  (add-hook 'window-size-change-functions #'feedsmith--centering-hook nil t))
 
 (defun feedsmith-list--sort-by-date (a b)
   "Sort entries A and B by published date descending."
@@ -165,7 +166,9 @@
     (switch-to-buffer buf)
     (unless (derived-mode-p 'feedsmith-list-mode)
       (feedsmith-list-mode))
-    (feedsmith-list-refresh)))
+    (feedsmith-list-refresh)
+    (when-let ((win (get-buffer-window buf)))
+      (feedsmith--update-centering win))))
 
 ;;;; Feed list commands
 
@@ -286,7 +289,8 @@
 
 (define-derived-mode feedsmith-article-mode special-mode "Feedsmith-Article"
   "Major mode for viewing a Feedsmith article."
-  (setq-local feedsmith-article--current-entry nil))
+  (setq-local feedsmith-article--current-entry nil)
+  (add-hook 'window-size-change-functions #'feedsmith--centering-hook nil t))
 
 (defun feedsmith-article-show (entry)
   "Display ENTRY in the article view buffer."
@@ -314,7 +318,9 @@
                          (feedsmith-entry-summary entry)
                          "<p>No content available.</p>")))
         (feedsmith-article--render-html content))
-      (goto-char (point-min)))))
+      (goto-char (point-min)))
+    (when-let ((win (get-buffer-window buf)))
+      (feedsmith--update-centering win))))
 
 (defun feedsmith-article--render-html (html)
   "Render HTML string into the current buffer using shr."
@@ -396,6 +402,34 @@ DIRECTION is 1 for next, -1 for previous."
     (switch-to-buffer "*feedsmith*")
     (feedsmith-list-refresh))
   (kill-buffer "*feedsmith-article*"))
+
+;;;; Responsive centering
+
+(defun feedsmith--update-centering (window)
+  "Update window margins on WINDOW to center feedsmith buffers.
+When the frame is wider than `feedsmith-center-threshold' pixels
+and WINDOW is displaying a feedsmith buffer, equal margins are
+applied so the content is `feedsmith-center-width' columns wide."
+  (when (window-live-p window)
+    (with-current-buffer (window-buffer window)
+      (if (and (or (derived-mode-p 'feedsmith-list-mode)
+                   (derived-mode-p 'feedsmith-article-mode))
+               (> (frame-pixel-width (window-frame window))
+                  feedsmith-center-threshold))
+          (let ((margin (max 0 (/ (- (window-total-width window)
+                                     feedsmith-center-width)
+                                  2))))
+            (set-window-margins window margin margin))
+        (when (or (derived-mode-p 'feedsmith-list-mode)
+                  (derived-mode-p 'feedsmith-article-mode))
+          (set-window-margins window 0 0))))))
+
+(defun feedsmith--centering-hook (frame)
+  "Update centering for all windows in FRAME showing feedsmith buffers."
+  (walk-windows
+   (lambda (win)
+     (feedsmith--update-centering win))
+   'no-minibuf frame))
 
 (provide 'feedsmith-ui)
 ;;; feedsmith-ui.el ends here
