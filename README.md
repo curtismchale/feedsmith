@@ -2,6 +2,8 @@
 
 An Emacs RSS reader with Feedbin sync, pluggable backends, Evil keybindings, and Org refile integration.
 
+Built with Claude.
+
 ## Requirements
 
 - Emacs 28.1+ (built-in json, eieio, libxml)
