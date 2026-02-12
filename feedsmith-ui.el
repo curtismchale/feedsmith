@@ -370,20 +370,27 @@
     (mapcar #'feedsmith-entry-id entries)))
 
 (defun feedsmith-article--navigate (direction)
-  "Navigate to the next or previous article.
-DIRECTION is 1 for next, -1 for previous."
+  "Navigate to the next or previous unread article.
+DIRECTION is 1 for next, -1 for previous.
+Returns to the feed list if no unread articles remain."
   (when feedsmith-article--current-entry
     (let* ((ids (feedsmith-article--sorted-entry-ids))
            (current-id (feedsmith-entry-id feedsmith-article--current-entry))
            (pos (cl-position current-id ids :test #'equal))
-           (new-pos (when pos (+ pos direction))))
-      (when (and new-pos (>= new-pos 0) (< new-pos (length ids)))
-        (let ((new-entry (gethash (nth new-pos ids) feedsmith--entries)))
-          (when new-entry
-            ;; Auto-mark read
-            (when (feedsmith-entry-unread new-entry)
-              (feedsmith-mark-read (feedsmith-entry-id new-entry)))
-            (feedsmith-article-show new-entry)))))))
+           (search-pos (when pos (+ pos direction)))
+           (found nil))
+      ;; Search for the next unread article in the given direction
+      (while (and search-pos (>= search-pos 0) (< search-pos (length ids)) (not found))
+        (let ((entry (gethash (nth search-pos ids) feedsmith--entries)))
+          (if (and entry (feedsmith-entry-unread entry))
+              (setq found entry)
+            (setq search-pos (+ search-pos direction)))))
+      (if found
+          (progn
+            (feedsmith-mark-read (feedsmith-entry-id found))
+            (feedsmith-article-show found))
+        ;; No unread articles remain, return to feed list
+        (feedsmith-article-quit)))))
 
 (defun feedsmith-article-next ()
   "Show the next article."
