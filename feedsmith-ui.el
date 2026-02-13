@@ -61,6 +61,11 @@
   "Face for article metadata (author, feed, date, URL)."
   :group 'feedsmith)
 
+(defface feedsmith-link-number-face
+  '((t :inherit font-lock-constant-face :weight bold))
+  "Face for numbered link indicators in article view."
+  :group 'feedsmith)
+
 ;;;; Feed list mode
 
 (defvar feedsmith-list--unread-only t
@@ -273,6 +278,9 @@
 (defvar feedsmith-article--current-entry nil
   "The entry currently displayed in the article view.")
 
+(defvar feedsmith-article--links nil
+  "List of URLs in the current article, indexed by number.")
+
 (defvar feedsmith-article-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "O") #'feedsmith-article-open-browser)
@@ -284,12 +292,14 @@
     (define-key map (kbd "q") #'feedsmith-article-quit)
     (define-key map (kbd "SPC") #'scroll-up-command)
     (define-key map (kbd "S-SPC") #'scroll-down-command)
+    (define-key map (kbd "f") #'feedsmith-article-follow-link)
     map)
   "Keymap for `feedsmith-article-mode'.")
 
 (define-derived-mode feedsmith-article-mode special-mode "Feedsmith-Article"
   "Major mode for viewing a Feedsmith article."
   (setq-local feedsmith-article--current-entry nil)
+  (setq-local feedsmith-article--links nil)
   (add-hook 'window-size-change-functions #'feedsmith--centering-hook nil t))
 
 (defun feedsmith-article-show (entry)
@@ -327,7 +337,35 @@
   (let ((dom (with-temp-buffer
                (insert html)
                (libxml-parse-html-region (point-min) (point-max)))))
-    (shr-insert-document dom)))
+    (shr-insert-document dom))
+  (feedsmith-article--number-links))
+
+(defun feedsmith-article--number-links ()
+  "Number all links in the current buffer and collect them.
+Links are numbered starting from 1, and URLs are stored in
+`feedsmith-article--links' for access via `feedsmith-article-open-link'."
+  (setq feedsmith-article--links nil)
+  (let ((link-num 0)
+        (pos (point-min))
+        links-alist)
+    ;; Scan buffer for links (text with shr-url property)
+    (while (< pos (point-max))
+      (let ((url (get-text-property pos 'shr-url))
+            (next-change (next-single-property-change pos 'shr-url nil (point-max))))
+        (when (and url (not (assoc url links-alist)))
+          ;; New unique link found
+          (setq link-num (1+ link-num))
+          (push (cons url link-num) links-alist)
+          ;; Insert link number after the link text
+          (save-excursion
+            (goto-char next-change)
+            (insert (propertize (format "[%d]" link-num)
+                                'face 'feedsmith-link-number-face))))
+        (setq pos next-change)))
+    ;; Store links as a vector for O(1) access by number
+    (setq feedsmith-article--links (make-vector (1+ link-num) nil))
+    (dolist (pair links-alist)
+      (aset feedsmith-article--links (cdr pair) (car pair)))))
 
 ;;;; Article commands
 
@@ -337,6 +375,17 @@
   (when-let ((url (and feedsmith-article--current-entry
                        (feedsmith-entry-url feedsmith-article--current-entry))))
     (browse-url url)))
+
+(defun feedsmith-article-follow-link (num)
+  "Follow a numbered link in the article.
+Prompts for link NUM and opens it in the default browser."
+  (interactive "nLink number: ")
+  (if (and feedsmith-article--links
+           (> num 0)
+           (< num (length feedsmith-article--links))
+           (aref feedsmith-article--links num))
+      (browse-url (aref feedsmith-article--links num))
+    (message "No link #%d in this article" num)))
 
 (defun feedsmith-article-org-refile ()
   "Refile the current article to Org."

@@ -125,6 +125,7 @@ This opens the feed list, loads cached entries, syncs with Feedbin, and starts a
 | `q`       | Back to feed list        |
 | `SPC`     | Scroll down              |
 | `S-SPC`   | Scroll up                |
+| `f` + `<number>`   | Activates the numbered link on enter in your default browser                |
 
 ## Customization
 

@@ -45,7 +45,8 @@
     "p"       #'feedsmith-article-prev
     "q"       #'feedsmith-article-quit
     (kbd "SPC")   #'scroll-up-command
-    (kbd "S-SPC") #'scroll-down-command))
+    (kbd "S-SPC") #'scroll-down-command
+    "f"       #'feedsmith-article-follow-link))
 
 (provide 'feedsmith-evil)
 ;;; feedsmith-evil.el ends here
