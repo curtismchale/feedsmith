@@ -104,7 +104,10 @@ For 204 responses, the cdr is nil."
             (error "Feedsmith-feedbin: malformed HTTP response"))
           (let ((status (string-to-number (match-string 1))))
             (when (>= status 400)
-              (error "Feedsmith-feedbin: HTTP %d from %s %s" status method endpoint))
+              (error (if (= status 401)
+                         "Feedsmith-feedbin: HTTP 401 Unauthorized from %s %s — check your username and password in ~/.authinfo.gpg (machine api.feedbin.com)"
+                       "Feedsmith-feedbin: HTTP %d from %s %s")
+                     status method endpoint))
             ;; Move past headers
             (goto-char (point-min))
             (re-search-forward "\r?\n\r?\n" nil t)
